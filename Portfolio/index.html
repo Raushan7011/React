@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Portfolio Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="number"] {
+            width: auto;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: rgb(0, 255, 60);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: green;
+        }
+        .investment-list {
+            margin-top: 20px;
+        }
+        .investment-item {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .investment-item button {
+            background-color: #f44336;
+        }
+        .investment-item button.update {
+            background-color: #ff9800;
+        }
+        .investment-item button:hover {
+            background-color: #d32f2f;
+        }
+        .investment-item button.update:hover {
+            background-color: #fb8c00;
+        }
+    </style>
+</head>
+<body>
+    <h1>Investment Portfolio Tracker</h1>
+    <div>
+        <h2>Add New Investment</h2>
+        <div class="form-group">
+            <label for="asset-name">Asset Name:</label>
+            <select id="asset-name">
+                <option value="Google">Google</option>
+                <option value="Apple">Apple</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Microsoft">Microsoft</option>
+                <option value="Tesla">Tesla</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="investment-amount">Amount Invested:</label>
+            <input type="number" id="investment-amount">
+        </div>
+        <div class="form-group">
+            <label for="current-value">Current Value:</label>
+            <input type="number" id="current-value" width="50 px">
+        </div>
+        <button onclick="addInvestment()">Add Investment</button>
+    </div>
+    <div class="investment-list">
+        <h2>Investment List</h2>
+        <div id="investment-container"></div>
+        <h3>Total Portfolio Value: $<span id="total-value">0</span></h3>
+    </div>
+    <canvas id="portfolio-chart" width="400" height="400"></canvas>
+    
+    <script>
+        let investments = [];
+
+        function addInvestment() {
+            const assetName = document.getElementById('asset-name').value;
+            const investmentAmount = parseFloat(document.getElementById('investment-amount').value);
+            const currentValue = parseFloat(document.getElementById('current-value').value);
+
+            const investment = {
+                assetName,
+                investmentAmount,
+                currentValue,
+                percentageChange: ((currentValue - investmentAmount) / investmentAmount * 100).toFixed(2)
+            };
+            investments.push(investment);
+            document.getElementById('asset-name').value = '';
+            document.getElementById('investment-amount').value = '';
+            document.getElementById('current-value').value = '';
+            updateInvestmentList();
+            updatePortfolioChart();
+        }
+
+        function updateInvestmentList() {
+            const investmentContainer = document.getElementById('investment-container');
+            investmentContainer.innerHTML = '';
+            investments.forEach((investment, index) => {
+                const investmentItem = document.createElement('div');
+                investmentItem.classList.add('investment-item');
+                investmentItem.innerHTML = `
+                    <span>${investment.assetName}: $${investment.investmentAmount} -> $${investment.currentValue} (${investment.percentageChange}%)</span>
+                    <div>
+                        <button class="update" onclick="updateInvestment(${index})">Update</button>
+                        <button onclick="removeInvestment(${index})">Remove</button>
+                    </div>
+                `;
+                investmentContainer.appendChild(investmentItem);
+            });
+            updateTotalValue();
+        }
+
+        function removeInvestment(index) {
+            investments.splice(index, 1);
+            updateInvestmentList();
+            updatePortfolioChart();
+        }
+
+        function updateInvestment(index) {
+            const newCurrentValue = prompt('Enter the new current value:');
+            if (newCurrentValue !== null) {
+                investments[index].currentValue = parseFloat(newCurrentValue);
+                investments[index].percentageChange = ((investments[index].currentValue - investments[index].investmentAmount) / investments[index].investmentAmount * 100).toFixed(2);
+                updateInvestmentList();
+                updatePortfolioChart();
+            }
+        }
+
+        function updateTotalValue() {
+            const totalValue = investments.reduce((total, investment) => total + investment.currentValue, 0);
+            document.getElementById('total-value').innerText = totalValue.toFixed(2);
+        }
+
+        function updatePortfolioChart() {
+            const ctx = document.getElementById('portfolio-chart').getContext('2d');
+            const labels = investments.map(investment => investment.assetName);
+            const data = investments.map(investment => investment.currentValue);
+            if (window.portfolioChart) {
+                window.portfolioChart.destroy();
+            }
+            window.portfolioChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Portfolio Distribution',
+                        data,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+
